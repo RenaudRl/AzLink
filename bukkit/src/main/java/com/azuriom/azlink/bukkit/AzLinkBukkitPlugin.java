@@ -5,6 +5,7 @@ import com.azuriom.azlink.bukkit.command.BukkitCommandSender;
 import com.azuriom.azlink.bukkit.injector.InjectedHttpServer;
 import com.azuriom.azlink.bukkit.injector.NettyLibraryLoader;
 import com.azuriom.azlink.bukkit.integrations.AuthMeIntegration;
+import com.azuriom.azlink.bukkit.integrations.BTCCoreSupport;
 import com.azuriom.azlink.bukkit.integrations.FoliaSchedulerAdapter;
 import com.azuriom.azlink.bukkit.integrations.SkinsRestorerIntegration;
 import com.azuriom.azlink.bukkit.integrations.NLoginIntegration;
@@ -36,6 +37,7 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
 
     private AzLinkPlugin plugin;
     private LoggerAdapter logger;
+    private BTCCoreSupport btcCore;
 
     @Override
     public void onLoad() {
@@ -53,6 +55,10 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        // Must be detected before the plugin is created, as the platform type and
+        // the server data may be requested as soon as it is initialized.
+        this.btcCore = BTCCoreSupport.detect(this.logger);
 
         this.plugin = new AzLinkPlugin(this) {
             @Override
@@ -132,7 +138,7 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
 
     @Override
     public PlatformType getPlatformType() {
-        return PlatformType.BUKKIT;
+        return this.btcCore != null ? PlatformType.BTC_CORE : PlatformType.BUKKIT;
     }
 
     @Override
@@ -153,6 +159,13 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
 
     @Override
     public Optional<WorldData> getWorldData() {
+        // Counting the loaded chunks and the entities of every world runs on the main
+        // thread, so skip it while the server is overloaded rather than adding to the
+        // pressure: the world data is optional in the report.
+        if (this.btcCore != null && this.btcCore.isOverloaded()) {
+            return Optional.empty();
+        }
+
         int loadedChunks = getServer().getWorlds().stream()
                 .mapToInt(w -> w.getLoadedChunks().length)
                 .sum();
@@ -162,7 +175,7 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
                 .mapToInt(w -> w.getEntities().size())
                 .sum();
 
-        return Optional.of(new WorldData(this.tpsTask.getTps(), loadedChunks, entities));
+        return Optional.of(new WorldData(getTps(), loadedChunks, entities));
     }
 
     @Override
@@ -188,6 +201,10 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
     }
 
     private boolean isPlayerVisible(Player player) {
+        if (this.btcCore != null) {
+            return !this.btcCore.isVanished(player);
+        }
+
         for (MetadataValue meta : player.getMetadata("vanished")) {
             if (meta.asBoolean()) {
                 return false;
@@ -196,7 +213,16 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
         return true;
     }
 
+    private double getTps() {
+        return this.btcCore != null ? this.btcCore.getTps() : this.tpsTask.getTps();
+    }
+
     private void scheduleTpsTask() {
+        // BTC-CORE tracks the MSPT natively, so there is no need to run a task on every tick.
+        if (this.btcCore != null) {
+            return;
+        }
+
         if (isFolia()) {
             FoliaSchedulerAdapter.scheduleSyncTask(this, this.tpsTask, 1, 1);
 

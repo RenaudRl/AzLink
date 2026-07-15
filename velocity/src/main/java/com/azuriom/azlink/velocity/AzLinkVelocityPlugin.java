@@ -11,6 +11,7 @@ import com.azuriom.azlink.common.scheduler.SchedulerAdapter;
 import com.azuriom.azlink.common.utils.VersionInfo;
 import com.azuriom.azlink.velocity.command.VelocityCommandExecutor;
 import com.azuriom.azlink.velocity.command.VelocityCommandSender;
+import com.azuriom.azlink.velocity.integrations.BTCVelocitySupport;
 import com.azuriom.azlink.velocity.integrations.LimboAuthIntegration;
 import com.azuriom.azlink.velocity.integrations.NLoginIntegration;
 import com.azuriom.azlink.velocity.integrations.SkinsRestorerIntegration;
@@ -54,6 +55,7 @@ public final class AzLinkVelocityPlugin implements AzLinkPlatform {
 
     private AzLinkPlugin plugin;
     private ConfigurationNode config;
+    private BTCVelocitySupport btcVelocity;
 
     @Inject
     public AzLinkVelocityPlugin(ProxyServer proxy, @DataDirectory Path dataDirectory, Logger logger) {
@@ -71,6 +73,10 @@ public final class AzLinkVelocityPlugin implements AzLinkPlatform {
             this.logger.error("You can download the latest version of Velocity on https://papermc.io/downloads/velocity");
             return;
         }
+
+        // Must be detected before the plugin is created, as the platform type and
+        // the server data may be requested as soon as it is initialized.
+        this.btcVelocity = BTCVelocitySupport.detect(this.proxy, this.logger);
 
         this.plugin = new AzLinkPlugin(this);
         this.plugin.init();
@@ -120,7 +126,7 @@ public final class AzLinkVelocityPlugin implements AzLinkPlatform {
 
     @Override
     public PlatformType getPlatformType() {
-        return PlatformType.VELOCITY;
+        return this.btcVelocity != null ? PlatformType.BTC_VELOCITY : PlatformType.VELOCITY;
     }
 
     @Override
@@ -142,6 +148,16 @@ public final class AzLinkVelocityPlugin implements AzLinkPlatform {
 
     @Override
     public Stream<CommandSender> getOnlinePlayers() {
+        // On BTCVelocity, report every player of the cluster and not only the ones
+        // connected to this proxy.
+        if (this.btcVelocity != null) {
+            Stream<CommandSender> players = this.btcVelocity.getOnlinePlayers();
+
+            if (players != null) {
+                return players;
+            }
+        }
+
         return this.proxy.getAllPlayers().stream().map(VelocityCommandSender::new);
     }
 

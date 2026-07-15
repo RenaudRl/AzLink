@@ -7,7 +7,9 @@ public enum PlatformType {
     SPONGE("Sponge"),
     VELOCITY("Velocity"),
     NUKKIT("Nukkit"),
-    HYTALE("Hytale");
+    HYTALE("Hytale"),
+    BTC_CORE("BTC-CORE"),
+    BTC_VELOCITY("BTCVelocity");
 
     private final String name;
 
