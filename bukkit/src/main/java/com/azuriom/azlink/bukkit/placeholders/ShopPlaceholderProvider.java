@@ -29,22 +29,6 @@ public class ShopPlaceholderProvider implements PlaceholderProvider {
                 .runTaskTimer(plugin, this::refreshData, 1, 5 * 60 * 20); // Run every 5 minutes
     }
 
-    @Override
-    public List<String> availablePlaceholders() {
-        return Arrays.asList(
-                "%azlink_shop_goal_progress%",
-                "%azlink_shop_goal_total%",
-                "%azlink_shop_goal_percentage%",
-                "%azlink_shop_goal_progressbar%",
-                "%azlink_shop_top_[position]_name%",
-                "%azlink_shop_top_[position]_amount%",
-                "%azlink_shop_top_[position]_currency%",
-                "%azlink_shop_recent_[position]_name%",
-                "%azlink_shop_recent_[position]_amount%",
-                "%azlink_shop_recent_[position]_currency%",
-                "%azlink_shop_recent_[position]_timestamp%"
-        );
-    }
 
     @Override
     public void disable() {

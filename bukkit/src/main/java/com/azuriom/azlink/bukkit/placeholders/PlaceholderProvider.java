@@ -1,29 +1,39 @@
 package com.azuriom.azlink.bukkit.placeholders;
 
 import com.google.common.base.Strings;
-import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
+/**
+ * A source of AzLink placeholder values.
+ *
+ * <p>Deliberately still returns {@link String}: these are data — amounts, counts, timestamps — and
+ * keeping the providers free of any Adventure or MiniPlaceholders type means the engine can be
+ * swapped again without touching them. {@link AzLinkExpansion} turns the values into tags.</p>
+ */
 public interface PlaceholderProvider {
 
-    List<String> availablePlaceholders();
-
+    /**
+     * Evaluates a placeholder.
+     *
+     * @param parts  the arguments, formerly split from the {@code %azlink_…%} payload on {@code _},
+     *               now the tag arguments of {@code <azlink_…:a:b:c>}
+     * @param player the requesting player, or {@code null}
+     */
     String evaluatePlaceholder(String[] parts, OfflinePlayer player);
 
     default void disable() {}
 
     default String formatBoolean(boolean bool) {
-        return bool ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+        return PlaceholderFormats.booleanValue(bool);
     }
 
     default String formatAmount(double amount) {
-        return BasePlaceholderExpansion.FORMATTER.format(amount);
+        return PlaceholderFormats.AMOUNT.format(amount);
     }
 
     default String formatTimestamp(Instant instant) {
@@ -31,7 +41,7 @@ public interface PlaceholderProvider {
             return "0";
         }
 
-        return BasePlaceholderExpansion.DATE_TIME_FORMATTER.format(instant);
+        return PlaceholderFormats.dateTime().format(instant);
     }
 
     default String formatDuration(String format, Duration duration) {

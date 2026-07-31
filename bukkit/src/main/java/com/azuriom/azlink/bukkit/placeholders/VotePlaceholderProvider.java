@@ -53,26 +53,6 @@ public class VotePlaceholderProvider implements PlaceholderProvider, Runnable, L
         }
     }
 
-    @Override
-    public List<String> availablePlaceholders() {
-        return Arrays.asList(
-                "%azlink_vote_can_total%",
-                "%azlink_vote_can_[id]%",
-                "%azlink_vote_can_[id]_delay%",
-                "%azlink_vote_can_[id]_timestamp%",
-                "%azlink_vote_user_votes%",
-                "%azlink_vote_user_position%",
-                "%azlink_vote_sites_count%",
-                "%azlink_vote_sites_[id]_name%",
-                "%azlink_vote_sites_[id]_url%",
-                "%azlink_vote_top_[position]_name%",
-                "%azlink_vote_top_[position]_votes%",
-                "%azlink_vote_goal_target%",
-                "%azlink_vote_goal_progress%",
-                "%azlink_vote_goal_percentage%",
-                "%azlink_vote_goal_progressbar%"
-        );
-    }
 
     @Override
     public void disable() {

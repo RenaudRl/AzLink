@@ -9,7 +9,11 @@ import com.azuriom.azlink.bukkit.integrations.BTCCoreSupport;
 import com.azuriom.azlink.bukkit.integrations.FoliaSchedulerAdapter;
 import com.azuriom.azlink.bukkit.integrations.SkinsRestorerIntegration;
 import com.azuriom.azlink.bukkit.integrations.NLoginIntegration;
-import com.azuriom.azlink.bukkit.placeholders.BasePlaceholderExpansion;
+import com.azuriom.azlink.bukkit.placeholders.AzLinkExpansion;
+import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.Listener;
+import org.bukkit.event.EventHandler;
 import com.azuriom.azlink.common.AzLinkPlatform;
 import com.azuriom.azlink.common.AzLinkPlugin;
 import com.azuriom.azlink.common.command.CommandSender;
@@ -32,12 +36,15 @@ import java.util.stream.Stream;
 
 public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatform {
 
+    private static final String MINI_PLACEHOLDERS = "MiniPlaceholders";
+
     private final TpsTask tpsTask = new TpsTask();
     private final SchedulerAdapter scheduler = createSchedulerAdapter();
 
     private AzLinkPlugin plugin;
     private LoggerAdapter logger;
     private BTCCoreSupport btcCore;
+    private AzLinkExpansion expansion;
 
     @Override
     public void onLoad() {
@@ -109,15 +116,42 @@ public final class AzLinkBukkitPlugin extends JavaPlugin implements AzLinkPlatfo
             }
         }
 
-        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            BasePlaceholderExpansion.enable(this);
+        // Watched rather than checked once: this guard used to be one-shot, so a MiniPlaceholders
+        // (previously PlaceholderAPI) that enabled after AzLink left the placeholders unregistered
+        // for the whole session with nothing in the log to say so.
+        this.expansion = new AzLinkExpansion(this);
+        getServer().getPluginManager().registerEvents(new PlaceholderLifecycleListener(), this);
+
+        if (getServer().getPluginManager().isPluginEnabled(MINI_PLACEHOLDERS)) {
+            this.expansion.enable();
         }
     }
 
     @Override
     public void onDisable() {
+        if (this.expansion != null) {
+            this.expansion.disable();
+        }
+
         if (this.plugin != null) {
             this.plugin.shutdown();
+        }
+    }
+
+    private final class PlaceholderLifecycleListener implements Listener {
+
+        @EventHandler
+        public void onPluginEnable(PluginEnableEvent event) {
+            if (event.getPlugin().getName().equals(MINI_PLACEHOLDERS)) {
+                AzLinkBukkitPlugin.this.expansion.enable();
+            }
+        }
+
+        @EventHandler
+        public void onPluginDisable(PluginDisableEvent event) {
+            if (event.getPlugin().getName().equals(MINI_PLACEHOLDERS)) {
+                AzLinkBukkitPlugin.this.expansion.disable();
+            }
         }
     }
 

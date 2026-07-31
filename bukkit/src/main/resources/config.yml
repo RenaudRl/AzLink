@@ -23,10 +23,10 @@ nlogin-integration: false
 # the player's skin will be updated to the website's skin
 skinrestorer-integration: false
 
-# When PlaceholderAPI is installed, AzLink will register some placeholders
+# When MiniPlaceholders is installed, AzLink will register some placeholders
 # that can be used in the server.
 placeholders:
-  # By default, %azlink_money% is registered and can be used to get the player's money.
+  # By default, <azlink_money> is registered and can be used to get the player's money.
   # If the Shop plugin is installed on the website, you can enable the shop placeholders.
   # The available placeholders are listed on https://github.com/Azuriom/AzLink#shop-placeholders
   shop: false
@@ -34,6 +34,15 @@ placeholders:
   # If the vote plugin is installed on the website, you can enable the vote placeholders.
   # The available placeholders are listed on https://github.com/Azuriom/AzLink#vote-placeholders
   vote: false
+
+  # Values used for boolean placeholders, e.g. <azlink_vote:can:1>.
+  # These used to be read from PlaceholderAPI's own configuration.
+  boolean-true: "yes"
+  boolean-false: "no"
+
+  # Format of timestamp placeholders, e.g. <azlink_vote:can:1:timestamp>.
+  # This used to be read from PlaceholderAPI's own configuration.
+  date-format: "MM/dd/yy HH:mm:ss"
 
   # Duration format with placeholders for hours, minutes, and seconds.
   # Use %H/%M/%S for zero-padded (e.g. 03, 12) and %h/%m/%s for non-padded (e.g. 3, 12).
